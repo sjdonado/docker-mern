@@ -1,0 +1,50 @@
+version: '3.1'
+
+services:
+  nginx:
+    restart: always
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./nginx
+    ports:
+      - 8080:80
+    depends_on:
+      - api
+      - client
+  client:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./client
+    volumes:
+      - /usr/src/app/node_modules
+      - ./client:/usr/src/app
+  api: 
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./api
+    volumes:
+      - /usr/src/app/node_modules
+      - ./api:/usr/src/app
+    environment:
+      NODE_ENV: development
+      HOSTNAME: 0.0.0.0
+      PORT: 4000
+      SECRET: secretExampleKey
+      DATABASE_URL: mongodb://user:user_12345@db:27017/database_example
+    depends_on:
+      - db
+  db:
+    image: mongo
+    volumes:
+      - mongo-data:/data
+      # - ./db/dump:/dump
+      - ./db/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: user
+      MONGO_INITDB_ROOT_PASSWORD: user_12345
+      MONGO_INITDB_DATABASE: database_example
+    ports:
+      - 27017:27017
+
+volumes:
+  mongo-data:
